@@ -1,0 +1,159 @@
+# ============================================================
+# Fronius GEN24 Energy — HA Package
+# Ablage: /homeassistant/packages/fronius_energy.yaml
+#
+# Benötigt in configuration.yaml:
+#   homeassistant:
+#     packages: !include_dir_named packages
+# ============================================================
+
+# ------------------------------------------------------------
+# utility_meter — Tages- und Monatswerte aus Lifetime-Zählern
+# ------------------------------------------------------------
+utility_meter:
+
+  # PV-Produktion
+  pv_energie_tag:
+    source: sensor.fronius_gen24_energy_pv_gesamtproduktion
+    cycle: daily
+    unique_id: pv_energie_tag
+
+  pv_energie_monat:
+    source: sensor.fronius_gen24_energy_pv_gesamtproduktion
+    cycle: monthly
+    unique_id: pv_energie_monat
+
+  pv_energie_jahr:
+    source: sensor.fronius_gen24_energy_pv_gesamtproduktion
+    cycle: yearly
+    unique_id: pv_energie_jahr
+
+  # Einspeisung ins Netz
+  einspeisung_tag:
+    source: sensor.fronius_gen24_energy_einspeisung_ins_netz
+    cycle: daily
+    unique_id: einspeisung_tag
+
+  einspeisung_monat:
+    source: sensor.fronius_gen24_energy_einspeisung_ins_netz
+    cycle: monthly
+    unique_id: einspeisung_monat
+
+  einspeisung_jahr:
+    source: sensor.fronius_gen24_energy_einspeisung_ins_netz
+    cycle: yearly
+    unique_id: einspeisung_jahr
+
+  # Netzbezug
+  netzbezug_tag:
+    source: sensor.fronius_gen24_energy_netzbezug
+    cycle: daily
+    unique_id: netzbezug_tag
+
+  netzbezug_monat:
+    source: sensor.fronius_gen24_energy_netzbezug
+    cycle: monthly
+    unique_id: netzbezug_monat
+
+  netzbezug_jahr:
+    source: sensor.fronius_gen24_energy_netzbezug
+    cycle: yearly
+    unique_id: netzbezug_jahr
+
+
+# ------------------------------------------------------------
+# Template-Sensoren — Eigenverbrauch, Autarkie, Eigenverbrauchsquote
+#
+# Formeln (Tages-Werte über utility_meter):
+#   Eigenverbrauch  = PV_Tag - Einspeisung_Tag
+#   Autarkie        = (PV_Tag - Einspeisung_Tag) / (PV_Tag - Einspeisung_Tag + Netzbezug_Tag) × 100
+#   Eigenverbrauchsquote = (PV_Tag - Einspeisung_Tag) / PV_Tag × 100
+# ------------------------------------------------------------
+template:
+  - sensor:
+
+      # ---- Tageswerte ----------------------------------------
+
+      - name: "Eigenverbrauch Heute"
+        unique_id: eigenverbrauch_heute
+        unit_of_measurement: "Wh"
+        device_class: energy
+        state_class: total_increasing
+        icon: mdi:home-lightning-bolt
+        state: >
+          {% set pv   = states('sensor.pv_energie_tag') | float(0) %}
+          {% set feed = states('sensor.einspeisung_tag') | float(0) %}
+          {{ [pv - feed, 0] | max | round(0) }}
+
+      - name: "Autarkie Heute"
+        unique_id: autarkie_heute
+        unit_of_measurement: "%"
+        icon: mdi:solar-power-variant
+        state: >
+          {% set pv      = states('sensor.pv_energie_tag') | float(0) %}
+          {% set feed    = states('sensor.einspeisung_tag') | float(0) %}
+          {% set grid    = states('sensor.netzbezug_tag') | float(0) %}
+          {% set eigen   = [pv - feed, 0] | max %}
+          {% set gesamt  = eigen + grid %}
+          {% if gesamt > 0 %}
+            {{ (eigen / gesamt * 100) | round(1) }}
+          {% else %}
+            0
+          {% endif %}
+
+      - name: "Eigenverbrauchsquote Heute"
+        unique_id: eigenverbrauchsquote_heute
+        unit_of_measurement: "%"
+        icon: mdi:percent
+        state: >
+          {% set pv   = states('sensor.pv_energie_tag') | float(0) %}
+          {% set feed = states('sensor.einspeisung_tag') | float(0) %}
+          {% set eigen = [pv - feed, 0] | max %}
+          {% if pv > 0 %}
+            {{ (eigen / pv * 100) | round(1) }}
+          {% else %}
+            0
+          {% endif %}
+
+      # ---- Monatswerte ---------------------------------------
+
+      - name: "Eigenverbrauch Monat"
+        unique_id: eigenverbrauch_monat
+        unit_of_measurement: "Wh"
+        device_class: energy
+        state_class: total_increasing
+        icon: mdi:home-lightning-bolt
+        state: >
+          {% set pv   = states('sensor.pv_energie_monat') | float(0) %}
+          {% set feed = states('sensor.einspeisung_monat') | float(0) %}
+          {{ [pv - feed, 0] | max | round(0) }}
+
+      - name: "Autarkie Monat"
+        unique_id: autarkie_monat
+        unit_of_measurement: "%"
+        icon: mdi:solar-power-variant
+        state: >
+          {% set pv      = states('sensor.pv_energie_monat') | float(0) %}
+          {% set feed    = states('sensor.einspeisung_monat') | float(0) %}
+          {% set grid    = states('sensor.netzbezug_monat') | float(0) %}
+          {% set eigen   = [pv - feed, 0] | max %}
+          {% set gesamt  = eigen + grid %}
+          {% if gesamt > 0 %}
+            {{ (eigen / gesamt * 100) | round(1) }}
+          {% else %}
+            0
+          {% endif %}
+
+      - name: "Eigenverbrauchsquote Monat"
+        unique_id: eigenverbrauchsquote_monat
+        unit_of_measurement: "%"
+        icon: mdi:percent
+        state: >
+          {% set pv   = states('sensor.pv_energie_monat') | float(0) %}
+          {% set feed = states('sensor.einspeisung_monat') | float(0) %}
+          {% set eigen = [pv - feed, 0] | max %}
+          {% if pv > 0 %}
+            {{ (eigen / pv * 100) | round(1) }}
+          {% else %}
+            0
+          {% endif %}

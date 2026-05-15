@@ -1,0 +1,107 @@
+title: Energie Monat
+views:
+  - title: Monat
+    path: monat
+    icon: mdi:calendar-month
+    cards:
+
+      # ---- Übersicht Monat ------------------------------------
+      - type: entities
+        title: Energie Monat
+        entities:
+          - entity: sensor.pv_energie_monat
+            name: PV-Produktion Monat
+            icon: mdi:solar-power
+          - entity: sensor.einspeisung_monat
+            name: Einspeisung Monat
+            icon: mdi:transmission-tower-export
+          - entity: sensor.netzbezug_monat
+            name: Netzbezug Monat
+            icon: mdi:transmission-tower-import
+          - entity: sensor.eigenverbrauch_monat
+            name: Eigenverbrauch Monat
+            icon: mdi:home-lightning-bolt
+          - entity: sensor.autarkie_monat
+            name: Autarkie Monat
+            icon: mdi:solar-power-variant
+          - entity: sensor.eigenverbrauchsquote_monat
+            name: Eigenverbrauchsquote Monat
+            icon: mdi:percent
+
+      # ---- Statistik PV ----------------------------------------
+      - type: statistics-graph
+        title: PV-Produktion (täglich)
+        entities:
+          - entity: sensor.pv_energie_tag
+            name: PV Produktion
+        period:
+          calendar:
+            period: month
+        chart_type: bar
+        stat_types:
+          - change
+
+      # ---- Statistik Netzbilanz --------------------------------
+      - type: statistics-graph
+        title: Netzbezug / Einspeisung (täglich)
+        entities:
+          - entity: sensor.netzbezug_tag
+            name: Netzbezug
+          - entity: sensor.einspeisung_tag
+            name: Einspeisung
+        period:
+          calendar:
+            period: month
+        chart_type: bar
+        stat_types:
+          - change
+
+      # ---- Heute-Kacheln ---------------------------------------
+      - type: glance
+        title: Heute
+        entities:
+          - entity: sensor.pv_energie_tag
+            name: PV Heute
+          - entity: sensor.eigenverbrauch_heute
+            name: Eigenverbrauch
+          - entity: sensor.einspeisung_tag
+            name: Einspeisung
+          - entity: sensor.netzbezug_tag
+            name: Netzbezug
+          - entity: sensor.autarkie_heute
+            name: Autarkie
+          - entity: sensor.eigenverbrauchsquote_heute
+            name: EV-Quote
+
+      # ---- Batterie -------------------------------------------
+      - type: entities
+        title: Batterie
+        entities:
+          - entity: sensor.byd_battery_box_premium_hv_ladezustand
+            name: Ladezustand
+          - entity: sensor.total_battery_energy_charged
+            name: Geladen Gesamt
+          - entity: sensor.total_battery_energy_discharged
+            name: Entladen Gesamt
+
+      # ---- Wallbox --------------------------------------------
+      - type: entities
+        title: Wallbox
+        entities:
+          - entity: sensor.wallbox_energie_aus_pv
+            name: Energie aus PV
+          - entity: sensor.wallbox_energie_aus_netz
+            name: Energie aus Netz
+          - entity: sensor.wallbox_energie_gesamt
+            name: Gesamt geladen
+
+      # ---- Lifetime-Zähler ------------------------------------
+      - type: entities
+        title: Gesamtzähler (Lifetime)
+        entities:
+          - entity: sensor.fronius_gen24_energy_pv_gesamtproduktion
+            name: PV Gesamtproduktion
+          - entity: sensor.fronius_gen24_energy_einspeisung_ins_netz
+            name: Einspeisung Gesamt
+          - entity: sensor.fronius_gen24_energy_netzbezug
+            name: Netzbezug Gesamt
