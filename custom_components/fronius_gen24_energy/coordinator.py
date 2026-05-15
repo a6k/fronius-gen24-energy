@@ -1,11 +1,21 @@
 """DataUpdateCoordinator for Fronius GEN24 Energy."""
 from __future__ import annotations
 
+import inspect
 import logging
 from datetime import timedelta
 
 from pymodbus.client import AsyncModbusTcpClient
+from pymodbus.client.mixin import ModbusClientMixin
 from pymodbus.exceptions import ModbusException
+
+# pymodbus renamed the slave-ID parameter across versions:
+#   2.x → unit=   3.0-3.6 → slave=   3.7+ → slave= (keyword-only)
+# Detect at import time which keyword is accepted.
+_rhr_params = inspect.signature(ModbusClientMixin.read_holding_registers).parameters
+_SLAVE_KW = "slave" if "slave" in _rhr_params else "unit"
+_LOGGER_INIT = logging.getLogger(__name__)
+_LOGGER_INIT.debug("pymodbus slave keyword detected as: %s", _SLAVE_KW)
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
@@ -70,7 +80,7 @@ class FroniusGen24EnergyCoordinator(DataUpdateCoordinator[dict[str, float]]):
 
             # --- Inverter: PV total energy (Unit 1) ---
             r = await client.read_holding_registers(
-                REG_INV_PV_ENERGY_HI, 2, UNIT_INVERTER
+                REG_INV_PV_ENERGY_HI, count=2, **{_SLAVE_KW: UNIT_INVERTER}
             )
             if r.isError():
                 raise UpdateFailed(f"Modbus error reading inverter energy: {r}")
@@ -78,7 +88,7 @@ class FroniusGen24EnergyCoordinator(DataUpdateCoordinator[dict[str, float]]):
 
             # --- Smart Meter: scale factor (Unit 200) ---
             r = await client.read_holding_registers(
-                REG_METER_ENERGY_SF, 1, UNIT_METER
+                REG_METER_ENERGY_SF, count=1, **{_SLAVE_KW: UNIT_METER}
             )
             if r.isError():
                 raise UpdateFailed(f"Modbus error reading meter SF: {r}")
@@ -86,7 +96,7 @@ class FroniusGen24EnergyCoordinator(DataUpdateCoordinator[dict[str, float]]):
 
             # --- Smart Meter: grid export (Unit 200) ---
             r = await client.read_holding_registers(
-                REG_METER_EXPORT_HI, 2, UNIT_METER
+                REG_METER_EXPORT_HI, count=2, **{_SLAVE_KW: UNIT_METER}
             )
             if r.isError():
                 raise UpdateFailed(f"Modbus error reading meter export: {r}")
@@ -94,7 +104,7 @@ class FroniusGen24EnergyCoordinator(DataUpdateCoordinator[dict[str, float]]):
 
             # --- Smart Meter: grid import (Unit 200) ---
             r = await client.read_holding_registers(
-                REG_METER_IMPORT_HI, 2, UNIT_METER
+                REG_METER_IMPORT_HI, count=2, **{_SLAVE_KW: UNIT_METER}
             )
             if r.isError():
                 raise UpdateFailed(f"Modbus error reading meter import: {r}")
