@@ -5,7 +5,7 @@
   "config_flow": true,
   "documentation": "https://github.com/a6k/fronius-gen24-energy",
   "issue_tracker": "https://github.com/a6k/fronius-gen24-energy/issues",
-  "requirements": ["pymodbus==3.9.2"],
+  "requirements": [],
   "dependencies": [],
   "codeowners": ["@a6k"],
   "iot_class": "local_polling"
