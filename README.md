@@ -144,6 +144,38 @@ Verified against Fronius Symo GEN24 8.0, firmware 1.8.2, 2026-05-15.
 
 **pymodbus API note:** This integration detects the correct slave/unit parameter name at runtime (`device_id` in pymodbus 3.11+, `slave` in earlier 3.x). No manual configuration needed.
 
+## Data storage
+
+All energy data is stored in HA's SQLite database at `/config/home-assistant_v2.db`.
+
+### Data flow
+
+```
+Modbus sensor         reads register every 10 s → writes to HA state machine (RAM)
+      ↓
+Recorder              writes every state change  → home-assistant_v2.db (states table)
+      ↓
+Statistics            runs every hour            → home-assistant_v2.db (statistics table)
+      ↓
+utility_meter         calculates daily/monthly   → stored as its own entity state
+                      delta from lifetime counter
+```
+
+### Retention
+
+| Layer | What | Retention |
+|---|---|---|
+| `states` table | Every raw measurement (10 s interval) | 10 days (default), then purged |
+| `statistics` table | Hourly aggregates (min/max/mean/sum) | **Forever** — never auto-deleted |
+| `utility_meter` state | Current delta counter (e.g. today's kWh) | Survives HA restarts — picks up from last known value |
+
+### What this means in practice
+
+- **Monthly/yearly charts** are always available, even years later — they come from the `statistics` table.
+- **utility_meter sensors** (`pv_energie_tag`, `netzbezug_monat`, etc.) survive HA restarts. After a restart, HA reads the last stored value from the DB and continues counting from there — no data loss.
+- **Raw 10 s readings** are only needed for short-term history views. They are purged after 10 days but the hourly aggregates remain.
+- The **lifetime counters** from the Modbus integration (`sensor.fronius_gen24_energy_pv_gesamtproduktion` etc.) are the authoritative source — even if HA is down for days, the inverter keeps counting and HA picks up the correct value on reconnect.
+
 ## Roadmap
 
 - [ ] Battery charged / discharged energy (Phase 2)
