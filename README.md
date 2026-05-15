@@ -21,11 +21,13 @@ This integration reads **cumulative energy registers directly from the inverter 
 
 ## Sensors
 
+These three lifetime counters are provided by the integration:
+
 | Entity | Description | Unit |
 |---|---|---|
-| `sensor.pv_gesamtproduktion` | Total PV energy produced (lifetime) | Wh |
-| `sensor.einspeisung_ins_netz` | Total energy exported to grid (lifetime) | Wh |
-| `sensor.netzbezug` | Total energy imported from grid (lifetime) | Wh |
+| `sensor.fronius_gen24_energy_pv_gesamtproduktion` | Total PV energy produced (lifetime) | Wh |
+| `sensor.fronius_gen24_energy_einspeisung_ins_netz` | Total energy exported to grid (lifetime) | Wh |
+| `sensor.fronius_gen24_energy_netzbezug` | Total energy imported from grid (lifetime) | Wh |
 
 All sensors have `state_class: total_increasing` and are compatible with the HA Energy Dashboard and `utility_meter`.
 
@@ -63,25 +65,61 @@ Enter:
 - **Port**: `502`
 - **Poll interval**: `10` seconds (recommended)
 
-## Daily / monthly values with utility_meter
+## HA Configuration: utility_meter, template sensors, Energy Dashboard
 
-Add to `configuration.yaml`:
+The file [`ha_config/fronius_energy.yaml`](ha_config/fronius_energy.yaml) is a ready-to-use HA package that adds:
 
-```yaml
-utility_meter:
-  pv_energie_tag:
-    source: sensor.pv_gesamtproduktion
-    cycle: daily
-  pv_energie_monat:
-    source: sensor.pv_gesamtproduktion
-    cycle: monthly
-  einspeisung_tag:
-    source: sensor.einspeisung_ins_netz
-    cycle: daily
-  netzbezug_tag:
-    source: sensor.netzbezug
-    cycle: daily
+- **9 utility_meter sensors** — daily, monthly, and yearly deltas for PV production, grid export, and grid import
+- **6 template sensors** — Eigenverbrauch, Autarkie (%), and Eigenverbrauchsquote (%) for today and the current month
+
+### One-shot setup (run in HA terminal)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/a6k/fronius-gen24-energy/main/ha_config/setup.sh | bash
+ha core restart
 ```
+
+The script creates `/config/packages/fronius_energy.yaml` and patches `configuration.yaml` to include the packages directory.
+
+### Resulting sensors
+
+After restart, the following sensors are available:
+
+| Entity | Description | Unit |
+|---|---|---|
+| `sensor.pv_energie_tag` | PV production today | Wh |
+| `sensor.pv_energie_monat` | PV production this month | Wh |
+| `sensor.pv_energie_jahr` | PV production this year | Wh |
+| `sensor.einspeisung_tag` | Grid export today | Wh |
+| `sensor.einspeisung_monat` | Grid export this month | Wh |
+| `sensor.einspeisung_jahr` | Grid export this year | Wh |
+| `sensor.netzbezug_tag` | Grid import today | Wh |
+| `sensor.netzbezug_monat` | Grid import this month | Wh |
+| `sensor.netzbezug_jahr` | Grid import this year | Wh |
+| `sensor.eigenverbrauch_heute` | Self-consumption today (PV − export) | Wh |
+| `sensor.eigenverbrauch_monat` | Self-consumption this month | Wh |
+| `sensor.autarkie_heute` | Self-sufficiency today | % |
+| `sensor.autarkie_monat` | Self-sufficiency this month | % |
+| `sensor.eigenverbrauchsquote_heute` | Self-consumption ratio today | % |
+| `sensor.eigenverbrauchsquote_monat` | Self-consumption ratio this month | % |
+
+### Formulas
+
+```
+Eigenverbrauch      = PV − Einspeisung
+Autarkie            = Eigenverbrauch / (Eigenverbrauch + Netzbezug) × 100
+Eigenverbrauchsquote = Eigenverbrauch / PV × 100
+```
+
+### Energy Dashboard
+
+Configure via **Settings → Energy**:
+
+| Field | Sensor |
+|---|---|
+| Solar energy | `sensor.fronius_gen24_energy_pv_gesamtproduktion` |
+| Grid consumption | `sensor.fronius_gen24_energy_netzbezug` |
+| Grid return | `sensor.fronius_gen24_energy_einspeisung_ins_netz` |
 
 ## Modbus register reference
 
