@@ -9,13 +9,28 @@ from pymodbus.client import AsyncModbusTcpClient
 from pymodbus.client.mixin import ModbusClientMixin
 from pymodbus.exceptions import ModbusException
 
-# pymodbus renamed the slave-ID parameter across versions:
-#   2.x → unit=   3.0-3.6 → slave=   3.7+ → slave= (keyword-only)
-# Detect at import time which keyword is accepted.
+# pymodbus renamed the slave-ID parameter across versions.
+# Detect at import time and dump all params to a file for diagnostics.
 _rhr_params = inspect.signature(ModbusClientMixin.read_holding_registers).parameters
-_SLAVE_KW = "slave" if "slave" in _rhr_params else "unit"
+_SLAVE_KW = next(
+    (k for k in _rhr_params if k in ("device_id", "slave", "unit", "unit_id", "dev_id", "slave_id")),
+    None,
+)
 _LOGGER_INIT = logging.getLogger(__name__)
-_LOGGER_INIT.debug("pymodbus slave keyword detected as: %s", _SLAVE_KW)
+try:
+    import pymodbus as _pm
+    _pm_ver = _pm.__version__
+except Exception:
+    _pm_ver = "unknown"
+_LOGGER_INIT.warning(
+    "pymodbus %s — read_holding_registers params: %s — slave kw: %s",
+    _pm_ver, list(_rhr_params.keys()), _SLAVE_KW
+)
+try:
+    with open("/config/pymodbus_params.txt", "w") as _dbf:
+        _dbf.write(f"version={_pm_ver}\nparams={list(_rhr_params.keys())}\nslave_kw={_SLAVE_KW}\n")
+except Exception:
+    pass
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
@@ -79,16 +94,18 @@ class FroniusGen24EnergyCoordinator(DataUpdateCoordinator[dict[str, float]]):
                 raise UpdateFailed(f"Cannot connect to {self._host}:{self._port}")
 
             # --- Inverter: PV total energy (Unit 1) ---
+            _slave_kwargs = {_SLAVE_KW: UNIT_INVERTER} if _SLAVE_KW else {}
             r = await client.read_holding_registers(
-                REG_INV_PV_ENERGY_HI, count=2, **{_SLAVE_KW: UNIT_INVERTER}
+                REG_INV_PV_ENERGY_HI, count=2, **_slave_kwargs
             )
             if r.isError():
                 raise UpdateFailed(f"Modbus error reading inverter energy: {r}")
             pv_total_wh = float(_acc32(r.registers[0], r.registers[1]))
 
             # --- Smart Meter: scale factor (Unit 200) ---
+            _meter_kwargs = {_SLAVE_KW: UNIT_METER} if _SLAVE_KW else {}
             r = await client.read_holding_registers(
-                REG_METER_ENERGY_SF, count=1, **{_SLAVE_KW: UNIT_METER}
+                REG_METER_ENERGY_SF, count=1, **_meter_kwargs
             )
             if r.isError():
                 raise UpdateFailed(f"Modbus error reading meter SF: {r}")
@@ -96,7 +113,7 @@ class FroniusGen24EnergyCoordinator(DataUpdateCoordinator[dict[str, float]]):
 
             # --- Smart Meter: grid export (Unit 200) ---
             r = await client.read_holding_registers(
-                REG_METER_EXPORT_HI, count=2, **{_SLAVE_KW: UNIT_METER}
+                REG_METER_EXPORT_HI, count=2, **_meter_kwargs
             )
             if r.isError():
                 raise UpdateFailed(f"Modbus error reading meter export: {r}")
@@ -104,7 +121,7 @@ class FroniusGen24EnergyCoordinator(DataUpdateCoordinator[dict[str, float]]):
 
             # --- Smart Meter: grid import (Unit 200) ---
             r = await client.read_holding_registers(
-                REG_METER_IMPORT_HI, count=2, **{_SLAVE_KW: UNIT_METER}
+                REG_METER_IMPORT_HI, count=2, **_meter_kwargs
             )
             if r.isError():
                 raise UpdateFailed(f"Modbus error reading meter import: {r}")
