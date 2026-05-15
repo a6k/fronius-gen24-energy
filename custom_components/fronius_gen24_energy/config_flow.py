@@ -1,6 +1,7 @@
 """Config flow for Fronius GEN24 Energy integration."""
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Any
 
@@ -35,7 +36,7 @@ STEP_USER_SCHEMA = vol.Schema(
 
 async def _test_connection(host: str, port: int) -> str | None:
     """Try to read one register. Returns error string or None on success."""
-    client = AsyncModbusTcpClient(host, port=port)
+    client = AsyncModbusTcpClient(host, port=port, timeout=5)
     try:
         await client.connect()
         if not client.connected:
@@ -45,9 +46,10 @@ async def _test_connection(host: str, port: int) -> str | None:
         )
         if result.isError():
             return "modbus_error"
-    except ModbusException:
+    except (ModbusException, asyncio.TimeoutError, OSError):
         return "cannot_connect"
     except Exception:  # noqa: BLE001
+        _LOGGER.exception("Unexpected error during connection test to %s:%s", host, port)
         return "unknown"
     finally:
         client.close()
@@ -82,6 +84,8 @@ class FroniusGen24EnergyConfigFlow(ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="user",
-            data_schema=STEP_USER_SCHEMA,
+            data_schema=self.add_suggested_values_to_schema(
+                STEP_USER_SCHEMA, user_input or {}
+            ),
             errors=errors,
         )
