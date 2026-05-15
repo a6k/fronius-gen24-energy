@@ -18,33 +18,33 @@ UNIT_METER = 200
 
 # ---------------------------------------------------------------------------
 # Inverter registers (Unit 1, SunSpec Model 122 — Measurements/Status)
-# Model 122 header at 40182–40183, data starts at 40184 (1-indexed)
-# pymodbus uses 0-based addressing → subtract 1
+# Fronius GEN24 uses the 4xxxx register number directly as the PDU address
+# (no subtraction needed — the inverter accepts 40188 as PDU address 40188)
 # ---------------------------------------------------------------------------
 
 # PV total lifetime energy (acc32, 2 registers, unit: Wh)
-# Verified: matches HTTP API E_Total (23 109 kWh @ 2026-05-15)
-REG_INV_PV_ENERGY_HI = 40187   # high word  (register 40188 in docs)
-REG_INV_PV_ENERGY_LO = 40188   # low word   (register 40189 in docs)
+# Verified via raw Modbus scan 2026-05-15: (0x0160<<16)|0xA96D = 23 112 kWh
+REG_INV_PV_ENERGY_HI = 40188   # high word  (PDU address = doc register number)
+REG_INV_PV_ENERGY_LO = 40189   # low word
 
 # ---------------------------------------------------------------------------
 # Smart Meter registers (Unit 200, SunSpec Model 203 — Three-Phase Meter)
-# Model 203 header at 40070–40071, data starts at 40072 (1-indexed)
+# Same direct-addressing convention as inverter.
 # ---------------------------------------------------------------------------
 
 # Total exported energy — Einspeisung ins Netz (acc32, unit: see SF)
-# Verified: 13 814 kWh @ 2026-05-15
-REG_METER_EXPORT_HI = 40106    # high word  (register 40107 in docs)
-REG_METER_EXPORT_LO = 40107    # low word   (register 40108 in docs)
+# Verified via raw scan: (0x5258<<16)|0x7C4C × 10⁻² = 13 813 kWh
+REG_METER_EXPORT_HI = 40107    # high word
+REG_METER_EXPORT_LO = 40108    # low word
 
 # Total imported energy — Netzbezug (acc32, unit: see SF)
-# Verified: 3 879 kWh @ 2026-05-15
-REG_METER_IMPORT_HI = 40114    # high word  (register 40115 in docs)
-REG_METER_IMPORT_LO = 40115    # low word   (register 40116 in docs)
+# Verified via raw scan: (0x1720<<16)|0x17C0 × 10⁻² = 3 879 kWh
+REG_METER_IMPORT_HI = 40115    # high word
+REG_METER_IMPORT_LO = 40116    # low word
 
 # Energy scale factor — shared for export and import (int16)
-# Verified: -2  →  raw_value × 10⁻² = Wh
-REG_METER_ENERGY_SF = 40122    # (register 40123 in docs)
+# Verified via raw scan: 0xFFFE = -2  →  raw_value × 10⁻² = Wh
+REG_METER_ENERGY_SF = 40123
 
 # ---------------------------------------------------------------------------
 # Sensor keys (used as entity unique_id suffix and coordinator data keys)
