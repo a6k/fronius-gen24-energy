@@ -70,7 +70,7 @@ class FroniusGen24EnergyCoordinator(DataUpdateCoordinator[dict[str, float]]):
 
             # --- Inverter: PV total energy (Unit 1) ---
             r = await client.read_holding_registers(
-                REG_INV_PV_ENERGY_HI, count=2, UNIT_INVERTER
+                REG_INV_PV_ENERGY_HI, 2, UNIT_INVERTER
             )
             if r.isError():
                 raise UpdateFailed(f"Modbus error reading inverter energy: {r}")
@@ -78,7 +78,7 @@ class FroniusGen24EnergyCoordinator(DataUpdateCoordinator[dict[str, float]]):
 
             # --- Smart Meter: scale factor (Unit 200) ---
             r = await client.read_holding_registers(
-                REG_METER_ENERGY_SF, count=1, UNIT_METER
+                REG_METER_ENERGY_SF, 1, UNIT_METER
             )
             if r.isError():
                 raise UpdateFailed(f"Modbus error reading meter SF: {r}")
@@ -86,7 +86,7 @@ class FroniusGen24EnergyCoordinator(DataUpdateCoordinator[dict[str, float]]):
 
             # --- Smart Meter: grid export (Unit 200) ---
             r = await client.read_holding_registers(
-                REG_METER_EXPORT_HI, count=2, UNIT_METER
+                REG_METER_EXPORT_HI, 2, UNIT_METER
             )
             if r.isError():
                 raise UpdateFailed(f"Modbus error reading meter export: {r}")
@@ -94,7 +94,7 @@ class FroniusGen24EnergyCoordinator(DataUpdateCoordinator[dict[str, float]]):
 
             # --- Smart Meter: grid import (Unit 200) ---
             r = await client.read_holding_registers(
-                REG_METER_IMPORT_HI, count=2, UNIT_METER
+                REG_METER_IMPORT_HI, 2, UNIT_METER
             )
             if r.isError():
                 raise UpdateFailed(f"Modbus error reading meter import: {r}")
