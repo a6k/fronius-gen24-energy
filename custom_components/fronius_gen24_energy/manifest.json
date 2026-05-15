@@ -1,0 +1,12 @@
+{
+  "domain": "fronius_gen24_energy",
+  "name": "Fronius GEN24 Energy",
+  "version": "0.1.0",
+  "config_flow": true,
+  "documentation": "https://github.com/a6k/fronius-gen24-energy",
+  "issue_tracker": "https://github.com/a6k/fronius-gen24-energy/issues",
+  "requirements": ["pymodbus==3.9.2"],
+  "dependencies": [],
+  "codeowners": ["@a6k"],
+  "iot_class": "local_polling"
+}

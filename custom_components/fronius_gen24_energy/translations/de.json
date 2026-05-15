@@ -1,0 +1,23 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Fronius GEN24 Energy",
+        "description": "Verbindung zum Wechselrichter via Modbus TCP",
+        "data": {
+          "host": "IP-Adresse des Wechselrichters",
+          "port": "Modbus-Port",
+          "scan_interval": "Abfrageintervall (Sekunden)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Verbindung zum Wechselrichter fehlgeschlagen",
+      "modbus_error": "Modbus-Fehler beim Lesen der Register",
+      "unknown": "Unbekannter Fehler"
+    },
+    "abort": {
+      "already_configured": "Dieser Wechselrichter ist bereits konfiguriert"
+    }
+  }
+}

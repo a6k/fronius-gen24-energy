@@ -1,0 +1,23 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Fronius GEN24 Energy",
+        "description": "Connect to inverter via Modbus TCP",
+        "data": {
+          "host": "Inverter IP address",
+          "port": "Modbus port",
+          "scan_interval": "Poll interval (seconds)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to inverter",
+      "modbus_error": "Modbus error reading registers",
+      "unknown": "Unexpected error"
+    },
+    "abort": {
+      "already_configured": "This inverter is already configured"
+    }
+  }
+}
